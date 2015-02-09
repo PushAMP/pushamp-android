@@ -4,12 +4,12 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 
+@SuppressWarnings("unused")
 public class PushAMPIntentService extends IntentService {
-    public PushAMPIntentService(){
+    public PushAMPIntentService() {
         super("PushAMPIntentService");
     }
 

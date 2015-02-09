@@ -8,141 +8,75 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.util.Log;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Iterator;
-import java.util.List;
-
-import com.loopj.android.http.*;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.RequestParams;
+import com.pushamp.sdk.exceptions.PushAMPException;
 
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+
+/**
+ * PushAMP Client
+ * <p/>
+ * PushAMP pushAmp = new PushAMP("yourApiKey", "deviceToken", yorActivity);
+ * pushAmp.registerForRemoteNotifications();
+ */
+@SuppressWarnings("unused")
 public class PushAMP {
 
-    public static final String PushAMPAPIHost = "https://api.pushamp.com";
+    public static final String TAG = "PushAMP-GCM-SDK";
     public static final String Version = "1.0.2";
-    static final String TAG = "PushAMP-GCM-SDK";
-
-    static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    public static final String PushAMPAPIHost = "https://api.pushamp.com";
     public static final String UserAgent = TAG + "/" + Version;
     public static final AsyncHttpClient httpClient = new AsyncHttpClient();
-
-    private static PushAMP sharedInstance;
-
-    GoogleCloudMessaging gcm;
-
-    public static PushAMP getInstance() {
-        return sharedInstance;
-    }
-
+    public static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private String apiKey;
     private String senderId;
     private String deviceToken;
     private Activity delegate;
 
-    public PushAMP(String apiKey, String senderId, Activity delegate){
+    public PushAMP(String apiKey, String token, Activity delegate) {
         this.apiKey = apiKey;
-        this.senderId = senderId;
+        this.senderId = token;
         this.delegate = delegate;
         httpClient.setUserAgent(UserAgent);
-        sharedInstance = this;
     }
 
-    public void registerForRemoteNotifications() {
-        if (!isGooglePlayServicesAvailable()){
+    /**
+     * Register device
+     *
+     * @throws PushAMPException,
+     */
+    public void registerForRemoteNotifications() throws PushAMPException {
+        if (!isGooglePlayServicesAvailable()) {
             Log.e(TAG, "No valid Google Play Services APK found.");
             return;
         }
         doRegistrationInBackground();
     }
 
-    private void doRegistrationInBackground() {
-        new AsyncTask<Void,Void,String>() {
-            @Override
-            protected String doInBackground(Void... params) {
-                String token = getDeviceToken();
-
-                try {
-                    if (gcm == null) {
-                        gcm = GoogleCloudMessaging.getInstance(delegate.getApplicationContext());
-                    }
-
-                    if(token == null || token.isEmpty()) {
-                        token = gcm.register(senderId);
-                        setDeviceToken(token);
-                        Log.d(TAG, "Received token: " + token);
-                    } else {
-                        Log.d(TAG, "Reusing token: " + token);
-                    }
-                } catch (IOException ex) {
-                    // If there is an error, don't just keep trying to register.
-                    // Require the user to click a button again, or perform
-                    // exponential back-off.
-                    Log.e(TAG, ex.getMessage());
-                }
-                return token;
-            }
-
-            protected void onPostExecute(String deviceToken) {
-                registerDeviceToken(deviceToken);
-            }
-        }.execute(null, null, null);
-    }
-
     /**
      * Get the stored device token either from the instance variable or check in the stored preferences
      *
      * @return String the device token
+     * @throws PushAMPException,
      */
-    public String getDeviceToken(){
+    public String getDeviceToken() throws PushAMPException {
         //is it in the instance variable?
         if (deviceToken != null && !deviceToken.isEmpty()) {
             return deviceToken;
         }
-
         //check is the app settings
-        SharedPreferences preferences = delegate.getSharedPreferences(TAG, delegate.getApplicationContext().MODE_PRIVATE);
+        SharedPreferences preferences = delegate.getSharedPreferences(TAG, Context.MODE_PRIVATE);
         deviceToken = preferences.getString(getDeviceTokenKey(), "");
-
         return deviceToken;
     }
 
-    /**
-     * Set the device token. Also stores in the application shared preferences.
-     *
-     * @param deviceToken
-     */
-    private void setDeviceToken(String deviceToken) {
-        if(deviceToken != null) {
-            this.deviceToken = deviceToken;
-            SharedPreferences preferences = delegate.getSharedPreferences(TAG, delegate.getApplicationContext().MODE_PRIVATE);
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putString(getDeviceTokenKey(), deviceToken);
-            editor.apply();
-        }
-    }
-
-    /**
-     * Returns the key used to look up SharedPreferences for this module.
-     *
-     * @return The key used to look up saved preferences
-     */
-    private String getDeviceTokenKey() {
-        Context context = delegate.getApplicationContext();
-        try {
-            PackageInfo packageInfo = context.getPackageManager()
-                    .getPackageInfo(context.getPackageName(), 0);
-            return String.format("com.pushamp.api.deviceToken:%s", packageInfo.versionCode);
-        } catch (PackageManager.NameNotFoundException e) {
-            // should never happen
-            throw new RuntimeException("Could not get package name: " + e);
-        }
-    }
-
-    public void registerDeviceToken(String deviceToken) {
+    public void registerDeviceToken(String deviceToken) throws PushAMPException {
         registerDeviceTokenToChannel(deviceToken, null);
     }
 
@@ -150,106 +84,149 @@ public class PushAMP {
      * Registers a device token with PushAMP. If a channel is passed, then to subscribes the device token to that channel.
      *
      * @param deviceToken - Device token returned by the
-     * @param channel - Optional channel to subscribe the device token
+     * @param channel     - Optional channel to subscribe the device token
+     * @throws PushAMPException,
+     * @throws IllegalArgumentException
      */
-    public void registerDeviceTokenToChannel(String deviceToken, String channel) {
+    public void registerDeviceTokenToChannel(String deviceToken, String channel) throws PushAMPException {
         RequestParams params = new RequestParams();
         params.put("device_token", this.deviceToken);
         params.put("auth_token", this.apiKey);
-        if(channel != null) {
+        if (channel != null) {
             params.put("channel", channel);
         }
 
-        asyncRequest("POST", "/register", params, null);
+        post("/register", params, null);
     }
 
-    public void verifyCredentials(PushAMPResponseHandler handler) {
+    /**
+     * Verify you credentials
+     *
+     * @param handler your handler
+     * @throws PushAMPException
+     * @throws IllegalArgumentException
+     */
+    public void verifyCredentials(PushAMPResponseHandler handler) throws PushAMPException {
         RequestParams params = new RequestParams("auth_token", this.apiKey);
-        asyncRequest("GET", "/verify_credentials", params, handler);
+        get("/verify_credentials", params, handler);
     }
 
     /**
-     * Subscribe the device to a channel.
+     * Subscribe to channel
      *
-     * @param channel
+     * @param channel channel name
+     * @throws PushAMPException
+     * @throws IllegalArgumentException
      */
-    public void subscribeToChannel(String channel) {
-        subscribeToChannel(channel, null);
+    public void subscribe(String channel) throws PushAMPException {
+        subscribe(channel, null);
     }
 
-    public void subscribeToChannel(String channel, PushAMPResponseHandler handler) {
+    /**
+     * Subscribe to channel
+     *
+     * @param channel channel name
+     * @param handler your handler
+     * @throws PushAMPException
+     */
+    public void subscribe(String channel, PushAMPResponseHandler handler) throws PushAMPException {
         RequestParams params = new RequestParams("auth_token", this.apiKey, "device_token", this.deviceToken, "channel", channel);
-        asyncRequest("POST", "/subscribe", params, handler);
+        post("/subscribe", params, handler);
     }
 
     /**
-     * Unsubscribe the device from a channel
+     * Unsubscribe from the channel
      *
-     * @param channel
+     * @param channel channel name
+     * @throws PushAMPException
      */
-    public void unsubscribeFromChannel(String channel) {
-        unsubscribeFromChannel(channel, null);
+    public void unsubscribe(String channel) throws PushAMPException {
+        unsubscribe(channel, null);
     }
-    public void unsubscribeFromChannel(String channel, PushAMPResponseHandler handler) {
+
+    /**
+     * Unsubscribe from the channel
+     *
+     * @param channel channel name
+     * @throws PushAMPException
+     * @throws IllegalArgumentException
+     */
+    public void unsubscribe(String channel, PushAMPResponseHandler handler) throws PushAMPException {
         RequestParams params = new RequestParams("auth_token", this.apiKey, "device_token", this.deviceToken, "channel", channel);
-        asyncRequest("POST", "/unsubscribe", params, handler);
+        post("/unsubscribe", params, handler);
     }
 
     /**
-     * Unsubscribe the device from all channels.
+     * Unsubscribe from all channels.
      *
+     * @throws PushAMPException
      */
-    public void unsubscribeFromAllChannels() {
-        unsubscribeFromAllChannels(null);
+    public void unsubscribeAll() throws PushAMPException {
+        unsubscribeAll(null);
     }
-    public void unsubscribeFromAllChannels(PushAMPResponseHandler handler) {
+
+    /**
+     * Unsubscribe from all channels.
+     *
+     * @throws PushAMPException
+     */
+    public void unsubscribeAll(PushAMPResponseHandler handler) throws PushAMPException {
         String url = String.format("/devices/%s", this.deviceToken);
         RequestParams params = new RequestParams("auth_token", this.apiKey, "channel_list", "");
-        asyncRequest("PUT", url, params, handler);
+        put(url, params, handler);
     }
 
-    public void getChannels(PushAMPResponseHandler handler ) {
+    /**
+     * Receive all subscribed channels
+     *
+     * @throws PushAMPException
+     */
+    public void receiveChannels(PushAMPResponseHandler handler) throws PushAMPException {
         String url = String.format("/devices/%s", this.deviceToken);
         RequestParams params = new RequestParams("auth_token", this.apiKey);
-        asyncRequest("GET", url, params, handler);
+        get(url, params, handler);
     }
 
     /**
      * Replace the current channel subscriptions with the provided list.
      *
-     * @param channels
+     * @param channels list of channels
+     * @throws PushAMPException
      */
-    public void setChannels(List<String> channels) {
-        setChannels(channels, null);
+    public void subscribe(List<String> channels) throws PushAMPException {
+        subscribe(channels, null);
     }
-    public void setChannels(List<String> channels, PushAMPResponseHandler handler) {
+
+    /**
+     * Replace the current channel subscriptions with the provided list.
+     *
+     * @param channels list of channels
+     * @param handler  your handler
+     * @throws PushAMPException
+     */
+    public void subscribe(List<String> channels, PushAMPResponseHandler handler) {
         String url = String.format("/devices/%s", this.deviceToken);
         RequestParams params = new RequestParams("auth_token", this.apiKey, "channel_list", join(channels.iterator(), ","));
-        asyncRequest("PUT", url, params, handler);
+        put(url, params, handler);
     }
 
-    private void asyncRequest(String verb, String url, RequestParams params, PushAMPResponseHandler handler) {
-        if(handler == null) {
+    private void post(String url, RequestParams params, PushAMPResponseHandler handler) throws PushAMPException {
+        httpClient.post(PushAMPAPIHost + url, params, createOrGet(handler));
+    }
+
+    private void put(String url, RequestParams params, PushAMPResponseHandler handler) throws PushAMPException {
+        httpClient.put(PushAMPAPIHost + url, params, createOrGet(handler));
+    }
+
+    private void get(String url, RequestParams params, PushAMPResponseHandler handler) throws PushAMPException {
+        httpClient.get(PushAMPAPIHost + url, params, createOrGet(handler));
+    }
+
+    private PushAMPResponseHandler createOrGet(PushAMPResponseHandler handler) {
+        if (handler == null) {
             handler = new PushAMPResponseHandler();
         }
-
-        java.lang.reflect.Method method;
-        try {
-            Class[] types = new Class[]{String.class, RequestParams.class, ResponseHandlerInterface.class};
-            method = httpClient.getClass().getMethod(verb.toLowerCase(), types);
-            method.invoke(
-                    httpClient,
-                    PushAMPAPIHost + url,
-                    params,
-                    handler);
-
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
+        return handler;
     }
 
     private boolean isGooglePlayServicesAvailable() {
@@ -298,4 +275,68 @@ public class PushAMP {
         }
         return buf.toString();
     }
+
+
+    /**
+     * Set the device token. Also stores in the application shared preferences.
+     *
+     * @param deviceToken String representation of device token
+     */
+    private void setDeviceToken(String deviceToken) {
+        if (deviceToken != null) {
+            this.deviceToken = deviceToken;
+            SharedPreferences preferences = delegate.getSharedPreferences(TAG, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString(getDeviceTokenKey(), deviceToken);
+            editor.apply();
+        }
+    }
+
+    /**
+     * Returns the key used to look up SharedPreferences for this module.
+     *
+     * @return The key used to look up saved preferences
+     */
+    private String getDeviceTokenKey() throws PushAMPException {
+        Context context = delegate.getApplicationContext();
+        try {
+            PackageInfo packageInfo = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            return String.format("com.pushamp.api.deviceToken:%s", packageInfo.versionCode);
+        } catch (PackageManager.NameNotFoundException e) {
+            // should never happen
+            throw new PushAMPException("Could not get package name: ", e);
+        }
+    }
+
+    private void doRegistrationInBackground() {
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... params) {
+                String token = getDeviceToken();
+                try {
+                    GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(delegate.getApplicationContext());
+                    if (token == null || token.isEmpty()) {
+                        token = gcm.register(senderId);
+                        setDeviceToken(token);
+                        Log.d(TAG, "Received token: " + token);
+                    } else {
+                        Log.d(TAG, "Reusing token: " + token);
+                    }
+                } catch (IOException ex) {
+                    // If there is an error, don't just keep trying to register.
+                    // Require the user to click a button again, or perform
+                    // exponential back-off.
+                    Log.e(TAG, "Register failed!", ex);
+                }
+                return token;
+            }
+
+            protected void onPostExecute(String deviceToken) {
+                registerDeviceToken(deviceToken);
+            }
+        }.execute(null, null, null);
+    }
+
+
 }
