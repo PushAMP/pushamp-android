@@ -1,0 +1,13 @@
+Config example:
+
+{"pushamp":
+
+    {
+    "apiKey":"687addad67865", *
+    "senderId", "3aaaaaaa" *
+    "apiHost": "",
+    "vendorId": "",
+    }
+}
+
+* - mandatory

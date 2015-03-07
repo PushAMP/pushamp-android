@@ -10,27 +10,20 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 
 @SuppressWarnings("unused")
-public class PushAMPBroadcastReceiver extends WakefulBroadcastReceiver {
+public class PushAmpBroadcastReceiver extends WakefulBroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Bundle extras = intent.getExtras();
 
         GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(context);
         String messageType = gcm.getMessageType(intent);
-
-        if (!extras.isEmpty()) {  // unparcel the bundle
-
+        if (!extras.isEmpty()) {
             if (GoogleCloudMessaging.MESSAGE_TYPE_SEND_ERROR.equals(messageType)) {
                 onError(context, intent);
             } else if (GoogleCloudMessaging.MESSAGE_TYPE_MESSAGE.equals(messageType)) {
-                // It's a regular GCM message, do some work.
                 onPushReceived(context, intent, extras);
             }
-            //else if (GoogleCloudMessaging.MESSAGE_TYPE_DELETED.equals(messageType)) {
-            // Deleted messages on the server.
-            //}
         }
-
         setResultCode(Activity.RESULT_OK);
     }
 

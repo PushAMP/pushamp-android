@@ -8,8 +8,8 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 
 @SuppressWarnings("unused")
-public class PushAMPIntentService extends IntentService {
-    public PushAMPIntentService() {
+public class PushAmpIntentService extends IntentService {
+    public PushAmpIntentService() {
         super("PushAMPIntentService");
     }
 
@@ -21,7 +21,7 @@ public class PushAMPIntentService extends IntentService {
 
         onHandleIntent(intent, messageType, extras);
         //release the lock
-        PushAMPBroadcastReceiver.completeWakefulIntent(intent);
+        PushAmpBroadcastReceiver.completeWakefulIntent(intent);
     }
 
     protected void onHandleIntent(Intent intent, String messageType, Bundle extras) {
