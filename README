@@ -1,14 +1,20 @@
-Create configuration file pushamp_config.json
+How to use?
+
+
+1) Create configuration file pushamp_config.json and put to "assets".
+2) Add library to classpath
+3) PushAmp.getContext(context).registerForRemoteNotifications();
+...
+n) Profit!
+
 
 Config example:
 
 {"pushamp":
-
     {
-    "apiKey":"687addad67865", *
-    "senderId", "3aaaaaaa" *
-    "vendorId": "",
+    "apiKey":"someApiKey",
+    "senderId", "someSenderId" 
+    "vendorId": "someVendorId"
     }
 }
 
-* - mandatory
