@@ -1,3 +1,5 @@
+Create configuration file pushamp_config.json
+
 Config example:
 
 {"pushamp":
@@ -5,7 +7,6 @@ Config example:
     {
     "apiKey":"687addad67865", *
     "senderId", "3aaaaaaa" *
-    "apiHost": "",
     "vendorId": "",
     }
 }

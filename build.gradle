@@ -15,7 +15,7 @@ repositories {
 }
 dependencies {
     compile 'com.google.android.gms:play-services:6.5.87'
-    }
+}
 
 android {
     compileSdkVersion 21
@@ -32,6 +32,17 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDir 'src/main/java'
+            }
+            resources {
+                srcDir 'src/../lib'
+            }
         }
     }
 }

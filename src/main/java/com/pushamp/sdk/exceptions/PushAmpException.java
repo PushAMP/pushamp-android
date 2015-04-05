@@ -1,8 +1,10 @@
 package com.pushamp.sdk.exceptions;
 
 /**
- * Created by Andrey Kovrov on 10.02.15
+ * pushamp.com
  * All rights reserved.
+ *
+ * @author Andrey Kovrov
  */
 public class PushAmpException extends RuntimeException {
 

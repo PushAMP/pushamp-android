@@ -1,8 +1,10 @@
 package com.pushamp.sdk;
 
 /**
- * Created by Andrey Kovrov on 07.03.15
+ * pushamp.com
  * All rights reserved.
+ *
+ * @author Andrey Kovrov
  */
 public class Settings {
 

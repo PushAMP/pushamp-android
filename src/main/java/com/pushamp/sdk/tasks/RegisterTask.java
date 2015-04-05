@@ -1,21 +1,25 @@
 package com.pushamp.sdk.tasks;
 
-import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
+
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.pushamp.sdk.internals.Result;
 import com.pushamp.sdk.internals.ResultHolder;
 import com.pushamp.sdk.internals.ResultListener;
 import com.pushamp.sdk.Settings;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
 
 /**
- * Created by Andrey Kovrov on 07.03.15
+ * pushamp.com
  * All rights reserved.
+ *
+ * @author Andrey Kovrov
  */
 public class RegisterTask extends HttpAsyncTask<Void, Void, Result<String>> {
 
@@ -33,17 +37,17 @@ public class RegisterTask extends HttpAsyncTask<Void, Void, Result<String>> {
             if (!holder.isSuccess()) {
                 return holder;
             }
-            // todo:
-            HttpPost register = new HttpPost("/register");
+            HttpPost register = new HttpPost(PUSH_AMP_HOST + "/register");
             register.setHeader(X_API_KEY, settings.getApiKey());
+            register.setEntity(new StringEntity(String.format("{\"device_token\":\"%s\"}", token)));
             HttpResponse result = httpClient.execute(register);
             if (!isSuccess(result)) {
                 return ResultHolder.withError("Registration failed!");
             }
             return holder;
 
-        } catch (IOException e) {
-            Log.e(TAG, "Register failed!", e);
+        } catch (Exception any) {
+            Log.e(TAG, "Register failed!", any);
         }
         return ResultHolder.withError("Registration failed!");
     }
