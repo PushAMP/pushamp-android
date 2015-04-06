@@ -37,7 +37,7 @@ public class RegisterTask extends HttpAsyncTask<Void, Void, Result<String>> {
             if (!holder.isSuccess()) {
                 return holder;
             }
-            HttpPost register = new HttpPost(PUSH_AMP_HOST + "/register");
+            HttpPost register = new HttpPost(getHostWithApiPath() + "/register");
             register.setHeader(X_API_KEY, settings.getApiKey());
             register.setEntity(new StringEntity(String.format("{\"device_token\":\"%s\"}", token)));
             HttpResponse result = httpClient.execute(register);
