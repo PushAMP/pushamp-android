@@ -10,8 +10,6 @@ public class Settings {
 
     String senderId;
     String apiKey;
-    String vendorId;
-
 
     public String getSenderId() {
         return senderId;
@@ -29,11 +27,4 @@ public class Settings {
         this.apiKey = apiKey;
     }
 
-    public String getVendorId() {
-        return vendorId;
-    }
-
-    public void setVendorId(String vendorId) {
-        this.vendorId = vendorId;
-    }
 }
