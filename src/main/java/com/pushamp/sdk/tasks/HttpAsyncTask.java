@@ -27,7 +27,7 @@ public abstract class HttpAsyncTask<P, A, R> extends AsyncTask<P, A, R> {
     public static final String VERSION = "1.0.2";
     public static final String USER_AGENT = TAG + "/" + VERSION;
     public static final String X_API_KEY = "X-API-KEY";
-	public static final String API_VERSION = "/api/v1"
+	public static final String API_VERSION = "/api/v1";
     public static final String PUSH_AMP_HOST = "https://api.pushamp.com";
     protected final Settings settings;
     protected final Context context;

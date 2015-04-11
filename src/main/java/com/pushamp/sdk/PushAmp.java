@@ -31,9 +31,9 @@ public class PushAmp {
     public static final String VERSION = "1.0.2";
     public static final String USER_AGENT = TAG + "/" + VERSION;
     public static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-    private String deviceToken;
-    private Settings settings;
+    private final Settings settings;
     private final Context context;
+    private String deviceToken;
     private static volatile PushAmp instance;
 
     private PushAmp(Context context) {
@@ -50,6 +50,10 @@ public class PushAmp {
             instance = new PushAmp(context);
         }
         return instance;
+    }
+
+    public Settings getSettings() {
+        return settings;
     }
 
     /**
