@@ -13,8 +13,7 @@ Config example:
 {"pushamp":
     {
     "apiKey":"someApiKey",
-    "senderId", "someSenderId" 
-    "vendorId": "someVendorId"
+    "senderId", "someSenderId"
     }
 }
 
